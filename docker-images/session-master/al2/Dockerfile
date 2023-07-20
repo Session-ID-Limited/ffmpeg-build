@@ -267,16 +267,17 @@ RUN \
         make install && \
         rm -rf ${DIR}
 ## openjpeg https://github.com/uclouvain/openjpeg
-RUN \
-        DIR=/tmp/openjpeg && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sL https://github.com/uclouvain/openjpeg/archive/v${OPENJPEG_VERSION}.tar.gz | \
-        tar -zx --strip-components=1 && \
-        cmake -DBUILD_THIRDPARTY:BOOL=ON -DCMAKE_INSTALL_PREFIX="${PREFIX}" . && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
+# https://github.com/imagemin/optipng-bin/issues/97
+# RUN \
+#         DIR=/tmp/openjpeg && \
+#         mkdir -p ${DIR} && \
+#         cd ${DIR} && \
+#         curl -sL https://github.com/uclouvain/openjpeg/archive/v${OPENJPEG_VERSION}.tar.gz | \
+#         tar -zx --strip-components=1 && \
+#         cmake -DBUILD_THIRDPARTY:BOOL=ON -DCMAKE_INSTALL_PREFIX="${PREFIX}" . && \
+#         make && \
+#         make install && \
+#         rm -rf ${DIR}
 ## freetype https://www.freetype.org/
 RUN  \
         DIR=/tmp/freetype && \
