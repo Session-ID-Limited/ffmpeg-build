@@ -195,17 +195,18 @@ RUN \
         make install && \
         rm -rf ${DIR}
 ### libtheora http://www.theora.org/
-RUN \
-        DIR=/tmp/theora && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sLO http://downloads.xiph.org/releases/theora/libtheora-${THEORA_VERSION}.tar.gz && \
-        echo ${THEORA_SHA256SUM} | sha256sum --check && \
-        tar -zx --strip-components=1 -f libtheora-${THEORA_VERSION}.tar.gz && \
-        ./configure --prefix="${PREFIX}" --with-ogg="${PREFIX}" --enable-shared && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
+# maybe ./configure --build=aarch64-unknown-linux-gnu
+# RUN \
+#         DIR=/tmp/theora && \
+#         mkdir -p ${DIR} && \
+#         cd ${DIR} && \
+#         curl -sLO http://downloads.xiph.org/releases/theora/libtheora-${THEORA_VERSION}.tar.gz && \
+#         echo ${THEORA_SHA256SUM} | sha256sum --check && \
+#         tar -zx --strip-components=1 -f libtheora-${THEORA_VERSION}.tar.gz && \
+#         ./configure --prefix="${PREFIX}" --with-ogg="${PREFIX}" --enable-shared && \
+#         make && \
+#         make install && \
+#         rm -rf ${DIR}
 ### libvpx https://www.webmproject.org/code/
 RUN \
         DIR=/tmp/vpx && \
