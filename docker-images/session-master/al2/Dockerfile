@@ -50,6 +50,7 @@ ENV         FFMPEG_VERSION=6.0 \
     LIBARIBB24_VERSION=1.0.3 \
     LIBPNG_VERSION=1.6.9 \
     LIBVMAF_VERSION=2.1.1 \
+    AUTOCONF_BUILD_TYPE=--build=aarch64-unknown-linux-gnu \
     SRC=/usr/local
 
 ARG         FREETYPE_SHA256SUM="5eab795ebb23ac77001cfb68b7d4d50b5d6c7469247b0b01b2c953269f658dac freetype-2.10.4.tar.gz"
@@ -195,18 +196,17 @@ RUN \
         make install && \
         rm -rf ${DIR}
 ### libtheora http://www.theora.org/
-# maybe ./configure --build=aarch64-unknown-linux-gnu
-# RUN \
-#         DIR=/tmp/theora && \
-#         mkdir -p ${DIR} && \
-#         cd ${DIR} && \
-#         curl -sLO http://downloads.xiph.org/releases/theora/libtheora-${THEORA_VERSION}.tar.gz && \
-#         echo ${THEORA_SHA256SUM} | sha256sum --check && \
-#         tar -zx --strip-components=1 -f libtheora-${THEORA_VERSION}.tar.gz && \
-#         ./configure --prefix="${PREFIX}" --with-ogg="${PREFIX}" --enable-shared && \
-#         make && \
-#         make install && \
-#         rm -rf ${DIR}
+RUN \
+        DIR=/tmp/theora && \
+        mkdir -p ${DIR} && \
+        cd ${DIR} && \
+        curl -sLO http://downloads.xiph.org/releases/theora/libtheora-${THEORA_VERSION}.tar.gz && \
+        echo ${THEORA_SHA256SUM} | sha256sum --check && \
+        tar -zx --strip-components=1 -f libtheora-${THEORA_VERSION}.tar.gz && \
+        ./configure ${AUTOCONF_BUILD_TYPE} --prefix="${PREFIX}" --with-ogg="${PREFIX}" --enable-shared && \
+        make && \
+        make install && \
+        rm -rf ${DIR}
 ### libvpx https://www.webmproject.org/code/
 RUN \
         DIR=/tmp/vpx && \
@@ -377,28 +377,27 @@ RUN \
         make install && \
         rm -rf ${DIR}
 
-# maybe ./configure --build=aarch64-unknown-linux-gnu
-# RUN \
-#         DIR=/tmp/xproto && \
-#         mkdir -p ${DIR} && \
-#         cd ${DIR} && \
-#         curl -sLO https://www.x.org/archive/individual/proto/xproto-${XPROTO_VERSION}.tar.gz && \
-#         tar -zx --strip-components=1 -f xproto-${XPROTO_VERSION}.tar.gz && \
-#         ./configure --srcdir=${DIR} --prefix="${PREFIX}" && \
-#         make && \
-#         make install && \
-#         rm -rf ${DIR}
+RUN \
+        DIR=/tmp/xproto && \
+        mkdir -p ${DIR} && \
+        cd ${DIR} && \
+        curl -sLO https://www.x.org/archive/individual/proto/xproto-${XPROTO_VERSION}.tar.gz && \
+        tar -zx --strip-components=1 -f xproto-${XPROTO_VERSION}.tar.gz && \
+        ./configure ${AUTOCONF_BUILD_TYPE} --srcdir=${DIR} --prefix="${PREFIX}" && \
+        make && \
+        make install && \
+        rm -rf ${DIR}
 
-# RUN \
-#         DIR=/tmp/libXau && \
-#         mkdir -p ${DIR} && \
-#         cd ${DIR} && \
-#         curl -sLO https://www.x.org/archive/individual/lib/libXau-${XAU_VERSION}.tar.gz && \
-#         tar -zx --strip-components=1 -f libXau-${XAU_VERSION}.tar.gz && \
-#         ./configure --srcdir=${DIR} --prefix="${PREFIX}" && \
-#         make && \
-#         make install && \
-#         rm -rf ${DIR}
+RUN \
+        DIR=/tmp/libXau && \
+        mkdir -p ${DIR} && \
+        cd ${DIR} && \
+        curl -sLO https://www.x.org/archive/individual/lib/libXau-${XAU_VERSION}.tar.gz && \
+        tar -zx --strip-components=1 -f libXau-${XAU_VERSION}.tar.gz && \
+        ./configure --srcdir=${DIR} --prefix="${PREFIX}" && \
+        make && \
+        make install && \
+        rm -rf ${DIR}
 
 RUN \
         DIR=/tmp/libpthread-stubs && \
