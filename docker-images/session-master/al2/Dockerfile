@@ -67,7 +67,6 @@ ARG         LIBZMQ_SHA256SUM="02ecc88466ae38cf2c8d79f09cfd2675ba299a439680b64ade
 ARG         LIBARIBB24_SHA256SUM="f61560738926e57f9173510389634d8c06cabedfa857db4b28fb7704707ff128 v1.0.3.tar.gz"
 
 
-ARG         LD_LIBRARY_PATH=/opt/ffmpeg/lib
 ARG         MAKEFLAGS="-j2"
 ARG         PKG_CONFIG_PATH="/opt/ffmpeg/share/pkgconfig:/opt/ffmpeg/lib/pkgconfig:/opt/ffmpeg/lib64/pkgconfig"
 ARG         PREFIX=/opt/ffmpeg
@@ -146,6 +145,7 @@ RUN \
         rm -rf ${DIR}
 ### x265 http://x265.org/
 # https://bitbucket.org/multicoreware/x265_git/issues/549/fail-to-build-for-aarch64-and-armhf
+# still doesn't work after adding -DENABLE_HDR10_PLUS=OFF
 #RUN \
 #        DIR=/tmp/x265 && \
 #        mkdir -p ${DIR} && \
@@ -154,7 +154,7 @@ RUN \
 #        tar -zx && \
 #        cd x265-${X265_VERSION}/build/linux && \
 #        sed -i "/-DEXTRA_LIB/ s/$/ -DCMAKE_INSTALL_PREFIX=\${PREFIX}/" multilib.sh && \
-#        sed -i "/^cmake/ s/$/ -DENABLE_CLI=OFF/" multilib.sh && \
+#        sed -i "/^cmake/ s/$/ -DENABLE_CLI=OFF -DENABLE_HDR10_PLUS=OFF/" multilib.sh && \
 #        ./multilib.sh && \
 #        make -C 8bit install && \
 #        rm -rf ${DIR}
@@ -266,18 +266,6 @@ RUN \
         make && \
         make install && \
         rm -rf ${DIR}
-## openjpeg https://github.com/uclouvain/openjpeg
-# https://github.com/imagemin/optipng-bin/issues/97
-# RUN \
-#         DIR=/tmp/openjpeg && \
-#         mkdir -p ${DIR} && \
-#         cd ${DIR} && \
-#         curl -sL https://github.com/uclouvain/openjpeg/archive/v${OPENJPEG_VERSION}.tar.gz | \
-#         tar -zx --strip-components=1 && \
-#         cmake -DBUILD_THIRDPARTY:BOOL=ON -DCMAKE_INSTALL_PREFIX="${PREFIX}" . && \
-#         make && \
-#         make install && \
-#         rm -rf ${DIR}
 ## freetype https://www.freetype.org/
 RUN  \
         DIR=/tmp/freetype && \
@@ -497,6 +485,18 @@ RUN \
         make check && \
         make install && \
         rm -rf ${DIR}
+## openjpeg https://github.com/uclouvain/openjpeg
+# FIXME: only missing libtiff, liblcms2 from third party libs
+RUN \
+        DIR=/tmp/openjpeg && \
+        mkdir -p ${DIR} && \
+        cd ${DIR} && \
+        curl -sL https://github.com/uclouvain/openjpeg/archive/v${OPENJPEG_VERSION}.tar.gz | \
+        tar -zx --strip-components=1 && \
+        cmake -DBUILD_THIRDPARTY:BOOL=OFF -DCMAKE_INSTALL_PREFIX="${PREFIX}" . && \
+        make && \
+        make install && \
+        rm -rf ${DIR}
 
 ## libaribb24
 RUN \
@@ -513,91 +513,90 @@ RUN \
         rm -rf ${DIR}
 
 
-### Download ffmpeg https://ffmpeg.org/
-#RUN  \
-#        DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && 
-##        curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && 
-##        tar -jx --strip-components=1 -f ffmpeg-${FFMPEG_VERSION}.tar.bz2 && 
-##        ./configure     --disable-debug  --disable-doc    --disable-ffplay   --enable-shared --enable-gpl  --extra-libs=-ldl && 
-##        make ;  make install
-#
-#
-#
-#
-#
-### Build ffmpeg https://ffmpeg.org/
-#RUN  \
-#        DIR=/tmp/ffmpeg && cd ${DIR} && 
-##        ./configure 
-##        --disable-debug 
-##        --disable-doc 
-##        --disable-ffplay 
-##        --enable-fontconfig 
-##        --enable-gpl 
-##        --enable-libaom 
-##        --enable-libaribb24 
-##        --enable-libass 
-##        --enable-libbluray 
-##        --enable-libfdk_aac 
-##        --enable-libfreetype 
-##        --enable-libkvazaar 
-##        --enable-libmp3lame 
-##        --enable-libopencore-amrnb 
-##        --enable-libopencore-amrwb 
-##        --enable-libopenjpeg 
-##        --enable-libopus 
-##        --enable-libsrt 
-##        --enable-libtheora 
-##        --enable-libvidstab 
-##        --enable-libvorbis 
-##        --enable-libvpx 
-##        --enable-libwebp 
-##        --enable-libx264 
-##        --enable-libx265 
-##        --enable-libxcb 
-##        --enable-libxvid 
-##        --enable-libzmq 
-##        --enable-nonfree 
-##        --enable-openssl 
-##        --enable-postproc 
-##        --enable-shared 
-##        --enable-small 
-##        --enable-version3 
-##        --extra-cflags="-I${PREFIX}/include" 
-##        --extra-ldflags="-L${PREFIX}/lib" 
-##        --extra-libs=-ldl 
-##        --extra-libs=-lpthread 
-##        --prefix="${PREFIX}" && 
-##        make clean && 
-##        make && 
-##        make install && 
-##        make tools/zmqsend && cp tools/zmqsend ${PREFIX}/bin/ && 
-##        make distclean && 
-##        hash -r && 
-##        cd tools && 
-##        make qt-faststart && cp qt-faststart ${PREFIX}/bin/
-#
-#RUN \
-#        ldd ${PREFIX}/bin/ffmpeg | grep opt/ffmpeg | cut -d ' ' -f 3 | xargs -i cp {} /usr/local/lib64/ && 
-##        for lib in /usr/local/lib64/*.so.*; do ln -s "${lib##*/}" "${lib%%.so.*}".so; done && 
-##        cp ${PREFIX}/bin/* /usr/local/bin/ && 
-##        cp -r ${PREFIX}/share/ffmpeg /usr/local/share/ && 
-##        LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib ffmpeg -buildconf && 
-##        cp -r ${PREFIX}/include/libav* ${PREFIX}/include/libpostproc ${PREFIX}/include/libsw* /usr/local/include && 
-##        mkdir -p /usr/local/lib64/pkgconfig && 
-##        for pc in ${PREFIX}/lib/pkgconfig/libav*.pc ${PREFIX}/lib/pkgconfig/libpostproc.pc ${PREFIX}/lib/pkgconfig/libsw*.pc; do 
-##          sed "s:${PREFIX}:/usr/local:g" <"$pc" >/usr/local/lib64/pkgconfig/"${pc##*/}"; 
-##        done
-#
-#FROM        bas
-##LABEL       org.opencontainers.image.authors="julien@rottenberg.info" 
-##            org.opencontainers.image.source=https://github.com/jrottenberg/ffmpeg
-#
-#ENV         LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib
-#
-#ENTRYPOINT  ["ffmpeg"]
-#
-#COPY --from=build /usr/local/ /usr/local/
-#
-## Let's make sure the app built correctly
-## Convenient to verify on https://hub.docker.com/r/jrottenberg/ffmpeg/builds/ console output
+## Download ffmpeg https://ffmpeg.org/
+RUN  \
+        DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \
+        git clone -b af_peaks_js https://github.com/Session-ID-Limited/FFmpeg.git .
+        # curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
+        # tar -jx --strip-components=1 -f ffmpeg-${FFMPEG_VERSION}.tar.bz2
+
+
+
+
+
+## Build ffmpeg https://ffmpeg.org/
+RUN  \
+        DIR=/tmp/ffmpeg && cd ${DIR} && \
+        ./configure \
+        --disable-debug \
+        --disable-doc \
+        --disable-ffplay \
+        --enable-fontconfig \
+        --enable-gpl \
+        --enable-libaom \
+        --enable-libaribb24 \
+        --enable-libass \
+        --enable-libbluray \
+        --enable-libfdk_aac \
+        --enable-libfreetype \
+        --enable-libkvazaar \
+        --enable-libmp3lame \
+        --enable-libopencore-amrnb \
+        --enable-libopencore-amrwb \
+        --enable-libopenjpeg \
+        --enable-libopus \
+        --enable-libsrt \
+        --enable-libtheora \
+        --enable-libvidstab \
+        --enable-libvorbis \
+        --enable-libvpx \
+        --enable-libwebp \
+        --enable-libx264 \
+        # --enable-libx265 \
+        --enable-libxcb \
+        --enable-libxvid \
+        --enable-libzmq \
+        --enable-nonfree \
+        --enable-openssl \
+        --enable-postproc \
+        --enable-shared \
+        --enable-small \
+        --enable-version3 \
+        --extra-cflags="-I${PREFIX}/include" \
+        --extra-ldflags="-L${PREFIX}/lib" \
+        --extra-libs=-ldl \
+        --extra-libs=-lpthread \
+        --prefix="${PREFIX}" && \
+        make clean && \
+        make && \
+        make install && \
+        make tools/zmqsend && cp tools/zmqsend ${PREFIX}/bin/ && \
+        make distclean && \
+        hash -r && \
+        cd tools && \
+        make qt-faststart && cp qt-faststart ${PREFIX}/bin/
+
+RUN \
+        ldd ${PREFIX}/bin/ffmpeg | grep opt/ffmpeg | cut -d ' ' -f 3 | xargs -i cp {} /usr/local/lib64/ && \
+        for lib in /usr/local/lib64/*.so.*; do ln -s "${lib##*/}" "${lib%%.so.*}".so; done && \
+        cp ${PREFIX}/bin/* /usr/local/bin/ && \
+        cp -r ${PREFIX}/share/ffmpeg /usr/local/share/ && \
+        LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib ffmpeg -buildconf && \
+        cp -r ${PREFIX}/include/libav* ${PREFIX}/include/libpostproc ${PREFIX}/include/libsw* /usr/local/include && \
+        mkdir -p /usr/local/lib64/pkgconfig && \
+        for pc in ${PREFIX}/lib/pkgconfig/libav*.pc ${PREFIX}/lib/pkgconfig/libpostproc.pc ${PREFIX}/lib/pkgconfig/libsw*.pc; do \
+          sed "s:${PREFIX}:/usr/local:g" <"$pc" >/usr/local/lib64/pkgconfig/"${pc##*/}"; \
+        done
+
+FROM        base
+LABEL       org.opencontainers.image.authors="julien@rottenberg.info" \
+            org.opencontainers.image.source=https://github.com/jrottenberg/ffmpeg
+
+ENV         LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib
+
+ENTRYPOINT  ["ffmpeg"]
+
+COPY --from=build /usr/local/ /usr/local/
+
+# Let's make sure the app built correctly
+# Convenient to verify on https://hub.docker.com/r/jrottenberg/ffmpeg/builds/ console output
