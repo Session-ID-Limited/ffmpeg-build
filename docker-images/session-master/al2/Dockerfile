@@ -90,6 +90,7 @@ RUN     buildDeps="autoconf \
                    python3 \
                    openssl-devel \
                    tar \
+                   unzip \
                    nasm \
                    which \
                    yasm \
@@ -237,7 +238,7 @@ RUN \
         cd ${DIR} && \
         curl -sL https://sourceforge.net/projects/lame/files/lame/${LAME_VERSION}/lame-${LAME_VERSION}.tar.gz/download | \
         tar -zx --strip-components=1 && \
-        ./configure --prefix="${PREFIX}" --bindir="${PREFIX}/bin" --enable-shared --enable-nasm --disable-frontend && \
+        ./configure --prefix="${PREFIX}" --bindir="${PREFIX}/bin" --enable-shared --enable-nasm --disable-frontend --disable-dependency-tracking --disable-debug && \
         make && \
         make install && \
         rm -rf ${DIR}
@@ -516,7 +517,8 @@ RUN \
 ## Download ffmpeg https://ffmpeg.org/
 RUN  \
         DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \
-        git clone -b af_peaks_js https://github.com/Session-ID-Limited/FFmpeg.git .
+        curl -sLO https://github.com/Session-ID-Limited/FFmpeg/archive/f496e1f68f4b373c86c7a9022721f628199da64e.zip && \
+        unzip *.zip && mv FFmpeg*/* ./
         # curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
         # tar -jx --strip-components=1 -f ffmpeg-${FFMPEG_VERSION}.tar.bz2
 
@@ -575,6 +577,9 @@ RUN  \
         hash -r && \
         cd tools && \
         make qt-faststart && cp qt-faststart ${PREFIX}/bin/
+
+# FIXME: copy libgomp to output lib dir
+# FIXME: use whatever deps are usable from al2 packages (like libtiff, lcms2, libpng and such), just install -devel rpms and copy over libs to output dir
 
 RUN \
         ldd ${PREFIX}/bin/ffmpeg | grep opt/ffmpeg | cut -d ' ' -f 3 | xargs -i cp {} /usr/local/lib64/ && \
