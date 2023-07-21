@@ -238,7 +238,7 @@ RUN \
         cd ${DIR} && \
         curl -sL https://sourceforge.net/projects/lame/files/lame/${LAME_VERSION}/lame-${LAME_VERSION}.tar.gz/download | \
         tar -zx --strip-components=1 && \
-        ./configure --prefix="${PREFIX}" --bindir="${PREFIX}/bin" --enable-shared --enable-nasm --disable-frontend --disable-dependency-tracking --disable-debug && \
+        ./configure ${AUTOCONF_BUILD_TYPE} --prefix="${PREFIX}" --bindir="${PREFIX}/bin" --enable-shared --enable-nasm --disable-frontend --disable-dependency-tracking --disable-debug && \
         make && \
         make install && \
         rm -rf ${DIR}
@@ -530,6 +530,7 @@ RUN  \
 RUN  \
         DIR=/tmp/ffmpeg && cd ${DIR} && \
         ./configure \
+        ${AUTOCONF_BUILD_TYPE} \
         --disable-debug \
         --disable-doc \
         --disable-ffplay \
