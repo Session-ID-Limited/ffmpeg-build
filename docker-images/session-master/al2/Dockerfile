@@ -530,7 +530,6 @@ RUN  \
 RUN  \
         DIR=/tmp/ffmpeg && cd ${DIR} && \
         ./configure \
-        ${AUTOCONF_BUILD_TYPE} \
         --disable-debug \
         --disable-doc \
         --disable-ffplay \
