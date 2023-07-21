@@ -533,6 +533,7 @@ RUN  \
         --disable-debug \
         --disable-doc \
         --disable-ffplay \
+        --enable-pthreads \
         --enable-fontconfig \
         --enable-gpl \
         --enable-libaom \
@@ -564,6 +565,7 @@ RUN  \
         --enable-shared \
         --enable-small \
         --enable-version3 \
+        --enable-neon \
         --extra-cflags="-I${PREFIX}/include" \
         --extra-ldflags="-L${PREFIX}/lib" \
         --extra-libs=-ldl \
