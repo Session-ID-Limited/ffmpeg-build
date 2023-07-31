@@ -67,7 +67,9 @@ ARG         LIBZMQ_SHA256SUM="02ecc88466ae38cf2c8d79f09cfd2675ba299a439680b64ade
 ARG         LIBARIBB24_SHA256SUM="f61560738926e57f9173510389634d8c06cabedfa857db4b28fb7704707ff128 v1.0.3.tar.gz"
 
 
-ARG         MAKEFLAGS="-j2"
+ARG         MAKEFLAGS="-j6"
+# ARG         STATIC_OR_SHARED="--enable-static --disable-shared"
+ARG         STATIC_OR_SHARED="--disable-static --enable-shared"
 ARG         PKG_CONFIG_PATH="/opt/ffmpeg/share/pkgconfig:/opt/ffmpeg/lib/pkgconfig:/opt/ffmpeg/lib64/pkgconfig"
 ARG         PREFIX=/opt/ffmpeg
 ARG         LD_LIBRARY_PATH="/opt/ffmpeg/lib:/opt/ffmpeg/lib64"
@@ -129,10 +131,10 @@ RUN \
         cd ${DIR} && \
         curl -sL https://sourceforge.net/projects/opencore-amr/files/opencore-amr/opencore-amr-${OPENCOREAMR_VERSION}.tar.gz/download | \
         tar -zx --strip-components=1 && \
-        ./configure --prefix="${PREFIX}" --enable-shared  && \
+        ./configure --prefix="${PREFIX}" ${STATIC_OR_SHARED} && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
+
 ## x264 http://www.videolan.org/developers/x264.html
 RUN \
         DIR=/tmp/x264 && \
@@ -140,10 +142,9 @@ RUN \
         cd ${DIR} && \
         curl -sL https://download.videolan.org/pub/videolan/x264/snapshots/x264-snapshot-${X264_VERSION}.tar.bz2 | \
         tar -jx --strip-components=1 && \
-        ./configure --prefix="${PREFIX}" --enable-shared --enable-pic --disable-cli && \
+        ./configure --prefix="${PREFIX}" ${STATIC_OR_SHARED} --enable-pic --disable-cli && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install 
 ### x265 http://x265.org/
 # https://bitbucket.org/multicoreware/x265_git/issues/549/fail-to-build-for-aarch64-and-armhf
 # still doesn't work after adding -DENABLE_HDR10_PLUS=OFF
@@ -157,8 +158,7 @@ RUN \
 #        sed -i "/-DEXTRA_LIB/ s/$/ -DCMAKE_INSTALL_PREFIX=\${PREFIX}/" multilib.sh && \
 #        sed -i "/^cmake/ s/$/ -DENABLE_CLI=OFF -DENABLE_HDR10_PLUS=OFF/" multilib.sh && \
 #        ./multilib.sh && \
-#        make -C 8bit install && \
-#        rm -rf ${DIR}
+#        make -C 8bit install
 ### libogg https://www.xiph.org/ogg/
 RUN \
         DIR=/tmp/ogg && \
@@ -169,8 +169,7 @@ RUN \
         tar -zx --strip-components=1 -f libogg-${OGG_VERSION}.tar.gz && \
         ./configure --prefix="${PREFIX}" --enable-shared  && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 ### libopus https://www.opus-codec.org/
 RUN \
         DIR=/tmp/opus && \
@@ -180,10 +179,9 @@ RUN \
         echo ${OPUS_SHA256SUM} | sha256sum --check && \
         tar -zx --strip-components=1 -f opus-${OPUS_VERSION}.tar.gz && \
         autoreconf -fiv && \
-        ./configure --prefix="${PREFIX}" --enable-shared && \
+        ./configure --prefix="${PREFIX}" ${STATIC_OR_SHARED} && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 ### libvorbis https://xiph.org/vorbis/
 RUN \
         DIR=/tmp/vorbis && \
@@ -192,10 +190,9 @@ RUN \
         curl -sLO http://downloads.xiph.org/releases/vorbis/libvorbis-${VORBIS_VERSION}.tar.gz && \
         echo ${VORBIS_SHA256SUM} | sha256sum --check && \
         tar -zx --strip-components=1 -f libvorbis-${VORBIS_VERSION}.tar.gz && \
-        ./configure --prefix="${PREFIX}" --with-ogg="${PREFIX}" --enable-shared && \
+        ./configure --prefix="${PREFIX}" --with-ogg="${PREFIX}" ${STATIC_OR_SHARED} && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 ### libtheora http://www.theora.org/
 RUN \
         DIR=/tmp/theora && \
@@ -204,10 +201,9 @@ RUN \
         curl -sLO http://downloads.xiph.org/releases/theora/libtheora-${THEORA_VERSION}.tar.gz && \
         echo ${THEORA_SHA256SUM} | sha256sum --check && \
         tar -zx --strip-components=1 -f libtheora-${THEORA_VERSION}.tar.gz && \
-        ./configure ${AUTOCONF_BUILD_TYPE} --prefix="${PREFIX}" --with-ogg="${PREFIX}" --enable-shared && \
+        ./configure ${AUTOCONF_BUILD_TYPE} --prefix="${PREFIX}" --with-ogg="${PREFIX}" ${STATIC_OR_SHARED} && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 ### libvpx https://www.webmproject.org/code/
 RUN \
         DIR=/tmp/vpx && \
@@ -215,11 +211,10 @@ RUN \
         cd ${DIR} && \
         curl -sL https://codeload.github.com/webmproject/libvpx/tar.gz/v${VPX_VERSION} | \
         tar -zx --strip-components=1 && \
-        ./configure --prefix="${PREFIX}" --enable-vp8 --enable-vp9 --enable-vp9-highbitdepth --enable-pic --enable-shared \
+        ./configure --prefix="${PREFIX}" --enable-vp8 --enable-vp9 --enable-vp9-highbitdepth --enable-pic ${STATIC_OR_SHARED} \
         --disable-debug --disable-examples --disable-docs --disable-install-bins  && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 ### libwebp https://developers.google.com/speed/webp/
 RUN \
         DIR=/tmp/vebp && \
@@ -227,10 +222,10 @@ RUN \
         cd ${DIR} && \
         curl -sL https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-${WEBP_VERSION}.tar.gz | \
         tar -zx --strip-components=1 && \
-        ./configure --prefix="${PREFIX}" --enable-shared  && \
+        ./configure --prefix="${PREFIX}" ${STATIC_OR_SHARED}  && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
+        # rm -rf ${DIR}
 ### libmp3lame http://lame.sourceforge.net/
 RUN \
         DIR=/tmp/lame && \
@@ -238,10 +233,9 @@ RUN \
         cd ${DIR} && \
         curl -sL https://sourceforge.net/projects/lame/files/lame/${LAME_VERSION}/lame-${LAME_VERSION}.tar.gz/download | \
         tar -zx --strip-components=1 && \
-        ./configure ${AUTOCONF_BUILD_TYPE} --prefix="${PREFIX}" --bindir="${PREFIX}/bin" --enable-shared --enable-nasm --disable-frontend --disable-dependency-tracking --disable-debug && \
+        ./configure ${AUTOCONF_BUILD_TYPE} --prefix="${PREFIX}" --bindir="${PREFIX}/bin" ${STATIC_OR_SHARED} --enable-nasm --disable-frontend --disable-dependency-tracking --disable-debug && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 ### xvid https://www.xvid.com/
 RUN \
         DIR=/tmp/xvid && \
@@ -253,8 +247,7 @@ RUN \
         cd xvidcore/build/generic && \
         ./configure --prefix="${PREFIX}" --bindir="${PREFIX}/bin" && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install 
 ### fdk-aac https://github.com/mstorsjo/fdk-aac
 RUN \
         DIR=/tmp/fdk-aac && \
@@ -263,10 +256,9 @@ RUN \
         curl -sL https://github.com/mstorsjo/fdk-aac/archive/v${FDKAAC_VERSION}.tar.gz | \
         tar -zx --strip-components=1 && \
         autoreconf -fiv && \
-        ./configure --prefix="${PREFIX}" --enable-shared --datadir="${DIR}" && \
+        ./configure --prefix="${PREFIX}" ${STATIC_OR_SHARED} --datadir="${DIR}" && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 ## freetype https://www.freetype.org/
 RUN  \
         DIR=/tmp/freetype && \
@@ -275,10 +267,9 @@ RUN  \
         curl -sLO https://download.savannah.gnu.org/releases/freetype/freetype-${FREETYPE_VERSION}.tar.gz && \
         echo ${FREETYPE_SHA256SUM} | sha256sum --check && \
         tar -zx --strip-components=1 -f freetype-${FREETYPE_VERSION}.tar.gz && \
-        ./configure --prefix="${PREFIX}" --disable-static --enable-shared && \
+        ./configure --prefix="${PREFIX}" ${STATIC_OR_SHARED} && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 ## libvstab https://github.com/georgmartius/vid.stab
 RUN  \
         DIR=/tmp/vid.stab && \
@@ -289,8 +280,7 @@ RUN  \
         tar -zx --strip-components=1 -f v${LIBVIDSTAB_VERSION}.tar.gz && \
         cmake -DCMAKE_INSTALL_PREFIX="${PREFIX}" . && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 ## fridibi https://www.fribidi.org/
 RUN  \
         DIR=/tmp/fribidi && \
@@ -301,10 +291,9 @@ RUN  \
         tar -zx --strip-components=1 -f ${FRIBIDI_VERSION}.tar.gz && \
         sed -i 's/^SUBDIRS =.*/SUBDIRS=gen.tab charset lib bin/' Makefile.am && \
         ./bootstrap --no-config --auto && \
-        ./configure --prefix="${PREFIX}" --disable-static --enable-shared && \
+        ./configure --prefix="${PREFIX}" ${STATIC_OR_SHARED} && \
         make -j1 && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 ## fontconfig https://www.freedesktop.org/wiki/Software/fontconfig/
 RUN  \
         DIR=/tmp/fontconfig && \
@@ -312,10 +301,9 @@ RUN  \
         cd ${DIR} && \
         curl -sLO https://www.freedesktop.org/software/fontconfig/release/fontconfig-${FONTCONFIG_VERSION}.tar.bz2 && \
         tar -jx --strip-components=1 -f fontconfig-${FONTCONFIG_VERSION}.tar.bz2 && \
-        ./configure --prefix="${PREFIX}" --disable-static --enable-shared && \
+        ./configure --prefix="${PREFIX}" ${STATIC_OR_SHARED} && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 ## libass https://github.com/libass/libass
 RUN  \
         DIR=/tmp/libass && \
@@ -325,10 +313,9 @@ RUN  \
         echo ${LIBASS_SHA256SUM} | sha256sum --check && \
         tar -zx --strip-components=1 -f ${LIBASS_VERSION}.tar.gz && \
         ./autogen.sh && \
-        ./configure --prefix="${PREFIX}" --disable-static --enable-shared && \
+        ./configure --prefix="${PREFIX}" ${STATIC_OR_SHARED} && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 ## kvazaar https://github.com/ultravideo/kvazaar
 RUN \
         DIR=/tmp/kvazaar && \
@@ -337,10 +324,9 @@ RUN \
         curl -sLO https://github.com/ultravideo/kvazaar/archive/v${KVAZAAR_VERSION}.tar.gz && \
         tar -zx --strip-components=1 -f v${KVAZAAR_VERSION}.tar.gz && \
         ./autogen.sh && \
-        ./configure --prefix="${PREFIX}" --disable-static --enable-shared && \
+        ./configure --prefix="${PREFIX}" ${STATIC_OR_SHARED} && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 
 RUN \
         DIR=/tmp/aom && \
@@ -351,8 +337,7 @@ RUN \
         cd ./aom_build ; \
         cmake -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DBUILD_SHARED_LIBS=1 ..; \
         make ; \
-        make install ; \
-        rm -rf ${DIR}
+        make install
 
 ## libxcb (and supporting libraries) for screen capture https://xcb.freedesktop.org/
 RUN \
@@ -361,10 +346,9 @@ RUN \
         cd ${DIR} && \
         curl -sLO https://www.x.org/archive//individual/util/util-macros-${XORG_MACROS_VERSION}.tar.gz && \
         tar -zx --strip-components=1 -f util-macros-${XORG_MACROS_VERSION}.tar.gz && \
-        ./configure --srcdir=${DIR} --prefix="${PREFIX}" && \
+        ./configure --srcdir=${DIR} --prefix="${PREFIX}" ${STATIC_OR_SHARED} && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 
 RUN \
         DIR=/tmp/xproto && \
@@ -372,10 +356,9 @@ RUN \
         cd ${DIR} && \
         curl -sLO https://www.x.org/archive/individual/proto/xproto-${XPROTO_VERSION}.tar.gz && \
         tar -zx --strip-components=1 -f xproto-${XPROTO_VERSION}.tar.gz && \
-        ./configure ${AUTOCONF_BUILD_TYPE} --srcdir=${DIR} --prefix="${PREFIX}" && \
+        ./configure ${AUTOCONF_BUILD_TYPE} --srcdir=${DIR} --prefix="${PREFIX}" ${STATIC_OR_SHARED} && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 
 RUN \
         DIR=/tmp/libXau && \
@@ -383,10 +366,9 @@ RUN \
         cd ${DIR} && \
         curl -sLO https://www.x.org/archive/individual/lib/libXau-${XAU_VERSION}.tar.gz && \
         tar -zx --strip-components=1 -f libXau-${XAU_VERSION}.tar.gz && \
-        ./configure --srcdir=${DIR} --prefix="${PREFIX}" && \
+        ./configure --srcdir=${DIR} --prefix="${PREFIX}" ${STATIC_OR_SHARED} && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 
 RUN \
         DIR=/tmp/libpthread-stubs && \
@@ -394,10 +376,9 @@ RUN \
         cd ${DIR} && \
         curl -sLO https://xcb.freedesktop.org/dist/libpthread-stubs-${LIBPTHREAD_STUBS_VERSION}.tar.gz && \
         tar -zx --strip-components=1 -f libpthread-stubs-${LIBPTHREAD_STUBS_VERSION}.tar.gz && \
-        ./configure --prefix="${PREFIX}" && \
+        ./configure --prefix="${PREFIX}" ${STATIC_OR_SHARED} && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 
 RUN \
         DIR=/tmp/libxcb-proto && \
@@ -406,10 +387,9 @@ RUN \
         curl -sLO https://xcb.freedesktop.org/dist/xcb-proto-${XCBPROTO_VERSION}.tar.gz && \
         tar -zx --strip-components=1 -f xcb-proto-${XCBPROTO_VERSION}.tar.gz && \
         ACLOCAL_PATH="${PREFIX}/share/aclocal" ./autogen.sh && \
-        ./configure --prefix="${PREFIX}" && \
+        ./configure --prefix="${PREFIX}" ${STATIC_OR_SHARED} && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 
 RUN \
         DIR=/tmp/libxcb && \
@@ -418,10 +398,9 @@ RUN \
         curl -sLO https://xcb.freedesktop.org/dist/libxcb-${LIBXCB_VERSION}.tar.gz && \
         tar -zx --strip-components=1 -f libxcb-${LIBXCB_VERSION}.tar.gz && \
         ACLOCAL_PATH="${PREFIX}/share/aclocal" ./autogen.sh && \
-        ./configure --prefix="${PREFIX}" --disable-static --enable-shared && \
+        ./configure --prefix="${PREFIX}" ${STATIC_OR_SHARED} && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 
 ## libxml2 - for libbluray
 RUN \
@@ -432,8 +411,7 @@ RUN \
         tar -xz --strip-components=1 && \
         ./autogen.sh --prefix="${PREFIX}" --with-ftp=no --with-http=no --with-python=no && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 
 ## libbluray - Requires libxml, freetype, and fontconfig
 RUN \
@@ -443,10 +421,9 @@ RUN \
         curl -sLO https://download.videolan.org/pub/videolan/libbluray/${LIBBLURAY_VERSION}/libbluray-${LIBBLURAY_VERSION}.tar.bz2 && \
         echo ${LIBBLURAY_SHA256SUM} | sha256sum --check && \
         tar -jx --strip-components=1 -f libbluray-${LIBBLURAY_VERSION}.tar.bz2 && \
-        ./configure --prefix="${PREFIX}" --disable-examples --disable-bdjava-jar --disable-static --enable-shared && \
+        ./configure --prefix="${PREFIX}" --disable-examples --disable-bdjava-jar ${STATIC_OR_SHARED} && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 
 ## libzmq https://github.com/zeromq/libzmq/
 RUN \
@@ -460,8 +437,7 @@ RUN \
         ./configure --prefix="${PREFIX}" && \
         make && \
         make check && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 
 ## libsrt https://github.com/Haivision/srt
 RUN \
@@ -472,8 +448,7 @@ RUN \
         tar -xz --strip-components=1 -f v${LIBSRT_VERSION}.tar.gz && \
         cmake -DCMAKE_INSTALL_PREFIX="${PREFIX}" . && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 
 ## libpng
 RUN \
@@ -484,8 +459,7 @@ RUN \
         ./autogen.sh && \
         ./configure --prefix="${PREFIX}" && \
         make check && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 ## openjpeg https://github.com/uclouvain/openjpeg
 # FIXME: only missing libtiff, liblcms2 from third party libs
 RUN \
@@ -496,8 +470,7 @@ RUN \
         tar -zx --strip-components=1 && \
         cmake -DBUILD_THIRDPARTY:BOOL=OFF -DCMAKE_INSTALL_PREFIX="${PREFIX}" . && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 
 ## libaribb24
 RUN \
@@ -510,14 +483,13 @@ RUN \
         autoreconf -fiv && \
         ./configure CFLAGS="-I${PREFIX}/include -fPIC" --prefix="${PREFIX}" && \
         make && \
-        make install && \
-        rm -rf ${DIR}
+        make install
 
 
 ## Download ffmpeg https://ffmpeg.org/
 RUN  \
         DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \
-        curl -sLO https://github.com/Session-ID-Limited/FFmpeg/archive/f496e1f68f4b373c86c7a9022721f628199da64e.zip && \
+        curl -sLO https://github.com/Session-ID-Limited/FFmpeg/archive/1710cd2a28f27b538daab4107f955a2f67dd244c.zip && \
         unzip *.zip && mv FFmpeg*/* ./
         # curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
         # tar -jx --strip-components=1 -f ffmpeg-${FFMPEG_VERSION}.tar.bz2
@@ -530,80 +502,88 @@ RUN  \
 RUN  \
         DIR=/tmp/ffmpeg && cd ${DIR} && \
         ./configure \
+        # general opts:
         --disable-debug \
         --disable-doc \
         --disable-ffplay \
-        --enable-pthreads \
-        --enable-fontconfig \
         --enable-gpl \
-        --enable-libaom \
-        --enable-libaribb24 \
-        --enable-libass \
-        --enable-libbluray \
-        --enable-libfdk_aac \
-        --enable-libfreetype \
-        --enable-libkvazaar \
-        --enable-libmp3lame \
-        --enable-libopencore-amrnb \
-        --enable-libopencore-amrwb \
-        --enable-libopenjpeg \
-        --enable-libopus \
-        --enable-libsrt \
-        --enable-libtheora \
-        --enable-libvidstab \
-        --enable-libvorbis \
-        --enable-libvpx \
-        --enable-libwebp \
-        --enable-libx264 \
-        # --enable-libx265 \
-        --enable-libxcb \
-        --enable-libxvid \
-        --enable-libzmq \
         --enable-nonfree \
-        --enable-openssl \
-        --enable-postproc \
-        --enable-shared \
-        --enable-small \
         --enable-version3 \
-        --enable-neon \
+        --enable-postproc \
+        ${STATIC_OR_SHARED} \
+        # dependencies:
+        # --enable-pthreads \
+        # --enable-fontconfig \
+        # --enable-libaom \
+        # --enable-libaribb24 \
+        # --enable-libass \
+        # --enable-libbluray \
+        # --enable-libfdk_aac \
+        # --enable-libfreetype \
+        # --enable-libkvazaar \
+        --enable-libmp3lame \
+        # --enable-libopencore-amrnb \
+        # --enable-libopencore-amrwb \
+        # --enable-libopenjpeg \
+        # --enable-libopus \
+        # --enable-libsrt \
+        # --enable-libtheora \
+        # --enable-libvidstab \
+        # --enable-libvorbis \
+        # --enable-libvpx \
+        # --enable-libwebp \
+        # --enable-libx264 \
+        # --enable-libx265 \
+        # --enable-libxcb \
+        # --enable-libxvid \
+        # --enable-libzmq \
+        --enable-openssl \
+        # optimizations:
+        # --enable-neon \
+        # --enable-runtime-cpudetect \
+        # --enable-lto \
         --extra-cflags="-I${PREFIX}/include" \
         --extra-ldflags="-L${PREFIX}/lib" \
-        --extra-libs=-ldl \
-        --extra-libs=-lpthread \
+        # --extra-libs=-ldl \
+        # --extra-libs=-lpthread \
+        # for static:
+        # --pkg-config-flags="--static" \
+        # --
         --prefix="${PREFIX}" && \
-        make clean && \
+        # make clean && \
         make && \
         make install && \
-        make tools/zmqsend && cp tools/zmqsend ${PREFIX}/bin/ && \
-        make distclean && \
-        hash -r && \
-        cd tools && \
-        make qt-faststart && cp qt-faststart ${PREFIX}/bin/
+        # make tools/zmqsend && cp tools/zmqsend ${PREFIX}/bin/ && \
+        # make distclean && \
+        hash -r
+        # cd tools && \
+        # make qt-faststart && cp qt-faststart ${PREFIX}/bin/
 
-# FIXME: copy libgomp to output lib dir
+# FIXME: unhardcode libcomp in grep regex once we use more deps from al2 packages
 # FIXME: use whatever deps are usable from al2 packages (like libtiff, lcms2, libpng and such), just install -devel rpms and copy over libs to output dir
 
 RUN \
-        ldd ${PREFIX}/bin/ffmpeg | grep opt/ffmpeg | cut -d ' ' -f 3 | xargs -i cp {} /usr/local/lib64/ && \
-        for lib in /usr/local/lib64/*.so.*; do ln -s "${lib##*/}" "${lib%%.so.*}".so; done && \
-        cp ${PREFIX}/bin/* /usr/local/bin/ && \
-        cp -r ${PREFIX}/share/ffmpeg /usr/local/share/ && \
-        LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib ffmpeg -buildconf && \
-        cp -r ${PREFIX}/include/libav* ${PREFIX}/include/libpostproc ${PREFIX}/include/libsw* /usr/local/include && \
-        mkdir -p /usr/local/lib64/pkgconfig && \
-        for pc in ${PREFIX}/lib/pkgconfig/libav*.pc ${PREFIX}/lib/pkgconfig/libpostproc.pc ${PREFIX}/lib/pkgconfig/libsw*.pc; do \
-          sed "s:${PREFIX}:/usr/local:g" <"$pc" >/usr/local/lib64/pkgconfig/"${pc##*/}"; \
-        done
+        ldd ${PREFIX}/bin/ffmpeg | grep -E 'opt/ffmpeg|libgomp' | cut -d ' ' -f 3 | xargs -i cp {} /usr/local/lib64/ && \
+        # for lib in /usr/local/lib64/*.so.*; do ln -s "${lib##*/}" "${lib%%.so.*}".so; done && \
+        cp ${PREFIX}/bin/ff* /usr/local/bin/ && \
+        # cp -r ${PREFIX}/share/ffmpeg /usr/local/share/ && \
+        LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib ffmpeg -buildconf
+        # cp -r ${PREFIX}/include/libav* ${PREFIX}/include/libpostproc ${PREFIX}/include/libsw* /usr/local/include && \
+        # mkdir -p /usr/local/lib64/pkgconfig && \
+        # for pc in ${PREFIX}/lib/pkgconfig/libav*.pc ${PREFIX}/lib/pkgconfig/libpostproc.pc ${PREFIX}/lib/pkgconfig/libsw*.pc; do \
+          # sed "s:${PREFIX}:/usr/local:g" <"$pc" >/usr/local/lib64/pkgconfig/"${pc##*/}"; \
+        # done
 
-FROM        base
-LABEL       org.opencontainers.image.authors="julien@rottenberg.info" \
-            org.opencontainers.image.source=https://github.com/jrottenberg/ffmpeg
+# FROM        base
 
 ENV         LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib
 
 ENTRYPOINT  ["ffmpeg"]
 
-COPY --from=build /usr/local/ /usr/local/
+# COPY --from=build /usr/local/ /usr/local/
+# COPY 1hr_relax_music.mp3 /tmp/
+# COPY input-666.wav /tmp/
+# COPY ffmpeg-git-20230721-arm64-static/ffmpeg /usr/local/bin/ffmpeg-static
 
 # Let's make sure the app built correctly
 # Convenient to verify on https://hub.docker.com/r/jrottenberg/ffmpeg/builds/ console output
