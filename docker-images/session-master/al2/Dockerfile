@@ -5,7 +5,7 @@
 # based on centos:7 Dockerfile for ffmpeg 6.0
 #
 #
-FROM    arm64v8/amazonlinux:2 AS base
+FROM    amazonlinux:2 AS base
 
 RUN     yum -y install libgomp && \
         yum clean all;
@@ -18,7 +18,6 @@ WORKDIR     /tmp/workdir
 ENV         FFMPEG_VERSION=6.0 \
     AOM_VERSION=v1.0.0 \
     CHROMAPRINT_VERSION=1.5.0 \
-    FDKAAC_VERSION=0.1.5 \
     FONTCONFIG_VERSION=2.12.4 \
     FREETYPE_VERSION=2.10.4 \
     FRIBIDI_VERSION=0.19.7 \
@@ -50,7 +49,10 @@ ENV         FFMPEG_VERSION=6.0 \
     LIBARIBB24_VERSION=1.0.3 \
     LIBPNG_VERSION=1.6.9 \
     LIBVMAF_VERSION=2.1.1 \
-    AUTOCONF_BUILD_TYPE=--build=aarch64-unknown-linux-gnu \
+    # AUTOCONF_BUILD_TYPE=--build=aarch64-unknown-linux-gnu \
+    AUTOCONF_BUILD_TYPE= \
+    CFLAGS="-O3" \
+    CPPFLAGS="-DNDEBUG" \
     SRC=/usr/local
 
 ARG         FREETYPE_SHA256SUM="5eab795ebb23ac77001cfb68b7d4d50b5d6c7469247b0b01b2c953269f658dac freetype-2.10.4.tar.gz"
@@ -147,18 +149,18 @@ RUN \
         make install 
 ### x265 http://x265.org/
 # https://bitbucket.org/multicoreware/x265_git/issues/549/fail-to-build-for-aarch64-and-armhf
-# still doesn't work after adding -DENABLE_HDR10_PLUS=OFF
-#RUN \
-#        DIR=/tmp/x265 && \
-#        mkdir -p ${DIR} && \
-#        cd ${DIR} && \
-#        curl -sL https://github.com/videolan/x265/archive/refs/tags/${X265_VERSION}.tar.gz | \
-#        tar -zx && \
-#        cd x265-${X265_VERSION}/build/linux && \
-#        sed -i "/-DEXTRA_LIB/ s/$/ -DCMAKE_INSTALL_PREFIX=\${PREFIX}/" multilib.sh && \
-#        sed -i "/^cmake/ s/$/ -DENABLE_CLI=OFF -DENABLE_HDR10_PLUS=OFF/" multilib.sh && \
-#        ./multilib.sh && \
-#        make -C 8bit install
+# still doesn't work on aarch64 after adding -DENABLE_HDR10_PLUS=OFF
+RUN \
+        DIR=/tmp/x265 && \
+        mkdir -p ${DIR} && \
+        cd ${DIR} && \
+        curl -sL https://github.com/videolan/x265/archive/refs/tags/${X265_VERSION}.tar.gz | \
+        tar -zx && \
+        cd x265-${X265_VERSION}/build/linux && \
+        sed -i "/-DEXTRA_LIB/ s/$/ -DCMAKE_INSTALL_PREFIX=\${PREFIX}/" multilib.sh && \
+        sed -i "/^cmake/ s/$/ -DENABLE_CLI=OFF/" multilib.sh && \
+        ./multilib.sh && \
+        make -C 8bit install
 ### libogg https://www.xiph.org/ogg/
 RUN \
         DIR=/tmp/ogg && \
@@ -167,7 +169,7 @@ RUN \
         curl -sLO http://downloads.xiph.org/releases/ogg/libogg-${OGG_VERSION}.tar.gz && \
         echo ${OGG_SHA256SUM} | sha256sum --check && \
         tar -zx --strip-components=1 -f libogg-${OGG_VERSION}.tar.gz && \
-        ./configure --prefix="${PREFIX}" --enable-shared  && \
+        ./configure --prefix="${PREFIX}" ${STATIC_OR_SHARED} && \
         make && \
         make install
 ### libopus https://www.opus-codec.org/
@@ -217,7 +219,7 @@ RUN \
         make install
 ### libwebp https://developers.google.com/speed/webp/
 RUN \
-        DIR=/tmp/vebp && \
+        DIR=/tmp/webp && \
         mkdir -p ${DIR} && \
         cd ${DIR} && \
         curl -sL https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-${WEBP_VERSION}.tar.gz | \
@@ -225,7 +227,6 @@ RUN \
         ./configure --prefix="${PREFIX}" ${STATIC_OR_SHARED}  && \
         make && \
         make install
-        # rm -rf ${DIR}
 ### libmp3lame http://lame.sourceforge.net/
 RUN \
         DIR=/tmp/lame && \
@@ -233,7 +234,7 @@ RUN \
         cd ${DIR} && \
         curl -sL https://sourceforge.net/projects/lame/files/lame/${LAME_VERSION}/lame-${LAME_VERSION}.tar.gz/download | \
         tar -zx --strip-components=1 && \
-        ./configure ${AUTOCONF_BUILD_TYPE} --prefix="${PREFIX}" --bindir="${PREFIX}/bin" ${STATIC_OR_SHARED} --enable-nasm --disable-frontend --disable-dependency-tracking --disable-debug && \
+        ./configure ${AUTOCONF_BUILD_TYPE} --prefix="${PREFIX}" --bindir="${PREFIX}/bin" ${STATIC_OR_SHARED} --enable-nasm --disable-frontend --disable-debug && \
         make && \
         make install
 ### xvid https://www.xvid.com/
@@ -248,17 +249,6 @@ RUN \
         ./configure --prefix="${PREFIX}" --bindir="${PREFIX}/bin" && \
         make && \
         make install 
-### fdk-aac https://github.com/mstorsjo/fdk-aac
-RUN \
-        DIR=/tmp/fdk-aac && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sL https://github.com/mstorsjo/fdk-aac/archive/v${FDKAAC_VERSION}.tar.gz | \
-        tar -zx --strip-components=1 && \
-        autoreconf -fiv && \
-        ./configure --prefix="${PREFIX}" ${STATIC_OR_SHARED} --datadir="${DIR}" && \
-        make && \
-        make install
 ## freetype https://www.freetype.org/
 RUN  \
         DIR=/tmp/freetype && \
@@ -434,10 +424,10 @@ RUN \
         echo ${LIBZMQ_SHA256SUM} | sha256sum --check && \
         tar -xz --strip-components=1 -f v${LIBZMQ_VERSION}.tar.gz && \
         ./autogen.sh && \
-        ./configure --prefix="${PREFIX}" && \
-        make && \
-        make check && \
-        make install
+        ./configure --prefix="${PREFIX}"
+        # make && \
+        # make check && \
+        # make install
 
 ## libsrt https://github.com/Haivision/srt
 RUN \
@@ -512,30 +502,28 @@ RUN  \
         --enable-postproc \
         ${STATIC_OR_SHARED} \
         # dependencies:
-        # --enable-pthreads \
-        # --enable-fontconfig \
-        # --enable-libaom \
-        # --enable-libaribb24 \
-        # --enable-libass \
-        # --enable-libbluray \
-        # --enable-libfdk_aac \
-        # --enable-libfreetype \
-        # --enable-libkvazaar \
+        --enable-fontconfig \
+        --enable-libaom \
+        --enable-libaribb24 \
+        --enable-libass \
+        --enable-libbluray \
+        --enable-libfreetype \
+        --enable-libkvazaar \
         --enable-libmp3lame \
-        # --enable-libopencore-amrnb \
-        # --enable-libopencore-amrwb \
-        # --enable-libopenjpeg \
-        # --enable-libopus \
-        # --enable-libsrt \
-        # --enable-libtheora \
-        # --enable-libvidstab \
-        # --enable-libvorbis \
-        # --enable-libvpx \
-        # --enable-libwebp \
-        # --enable-libx264 \
-        # --enable-libx265 \
-        # --enable-libxcb \
-        # --enable-libxvid \
+        --enable-libopencore-amrnb \
+        --enable-libopencore-amrwb \
+        --enable-libopenjpeg \
+        --enable-libopus \
+        --enable-libsrt \
+        --enable-libtheora \
+        --enable-libvidstab \
+        --enable-libvorbis \
+        --enable-libvpx \
+        --enable-libwebp \
+        --enable-libx264 \
+        --enable-libx265 \
+        --enable-libxcb \
+        --enable-libxvid \
         # --enable-libzmq \
         --enable-openssl \
         # optimizations:
@@ -583,7 +571,7 @@ ENTRYPOINT  ["ffmpeg"]
 # COPY --from=build /usr/local/ /usr/local/
 # COPY 1hr_relax_music.mp3 /tmp/
 # COPY input-666.wav /tmp/
-# COPY ffmpeg-git-20230721-arm64-static/ffmpeg /usr/local/bin/ffmpeg-static
+# COPY ffmpeg-git-20230721-amd64-static/ffmpeg /usr/local/bin/ffmpeg-static
 
 # Let's make sure the app built correctly
 # Convenient to verify on https://hub.docker.com/r/jrottenberg/ffmpeg/builds/ console output
