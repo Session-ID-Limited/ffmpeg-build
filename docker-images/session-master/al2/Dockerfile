@@ -153,7 +153,7 @@ RUN \
         tar -jx --strip-components=1 && \
         ./configure --prefix="${PREFIX}" ${STATIC_OR_SHARED} --enable-pic --disable-cli && \
         make && \
-        make install 
+        make install
 ### x265 http://x265.org/
 # https://bitbucket.org/multicoreware/x265_git/issues/549/fail-to-build-for-aarch64-and-armhf
 # still doesn't work on aarch64 after adding -DENABLE_HDR10_PLUS=OFF
@@ -559,37 +559,14 @@ RUN  \
         # make clean && \
         make && \
         make install && \
-        # make tools/zmqsend && cp tools/zmqsend ${PREFIX}/bin/ && \
         # make distclean && \
         hash -r
-        # cd tools && \
-        # make qt-faststart && cp qt-faststart ${PREFIX}/bin/
-
-# FIXME: unhardcode libcomp in grep regex once we use more deps from al2 packages
-# FIXME: use whatever deps are usable from al2 packages (like libtiff, lcms2, libpng and such), just install -devel rpms and copy over libs to output dir
 
 RUN \
         ldd ${PREFIX}/bin/ffmpeg | grep -E 'opt/ffmpeg|libgomp' | cut -d ' ' -f 3 | xargs -i cp {} /usr/local/lib64/ && \
-        # for lib in /usr/local/lib64/*.so.*; do ln -s "${lib##*/}" "${lib%%.so.*}".so; done && \
         cp ${PREFIX}/bin/ff* /usr/local/bin/ && \
-        # cp -r ${PREFIX}/share/ffmpeg /usr/local/share/ && \
         LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib ffmpeg -buildconf
-        # cp -r ${PREFIX}/include/libav* ${PREFIX}/include/libpostproc ${PREFIX}/include/libsw* /usr/local/include && \
-        # mkdir -p /usr/local/lib64/pkgconfig && \
-        # for pc in ${PREFIX}/lib/pkgconfig/libav*.pc ${PREFIX}/lib/pkgconfig/libpostproc.pc ${PREFIX}/lib/pkgconfig/libsw*.pc; do \
-          # sed "s:${PREFIX}:/usr/local:g" <"$pc" >/usr/local/lib64/pkgconfig/"${pc##*/}"; \
-        # done
-
-# FROM        base
 
 ENV         LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib
 
 ENTRYPOINT  ["ffmpeg"]
-
-# COPY --from=build /usr/local/ /usr/local/
-# COPY 1hr_relax_music.mp3 /tmp/
-# COPY input-666.wav /tmp/
-# COPY ffmpeg-git-20230721-arm64-static/ffmpeg /usr/local/bin/ffmpeg-static
-
-# Let's make sure the app built correctly
-# Convenient to verify on https://hub.docker.com/r/jrottenberg/ffmpeg/builds/ console output
