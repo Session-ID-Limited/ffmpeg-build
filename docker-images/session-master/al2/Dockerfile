@@ -497,7 +497,7 @@ RUN \
 ## Download ffmpeg https://ffmpeg.org/
 RUN  \
         DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \
-        curl -sLO https://github.com/Session-ID-Limited/FFmpeg/archive/f5ee8f9025503f30482e57d671d64d07b8c3d695.zip && \
+        curl -sLO https://github.com/Session-ID-Limited/FFmpeg/archive/4f564fe8ecd2065ce994195d4fc0aa53167c8c5f.zip && \
         unzip *.zip && mv FFmpeg*/* ./
         # curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
         # tar -jx --strip-components=1 -f ffmpeg-${FFMPEG_VERSION}.tar.bz2
